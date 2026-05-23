@@ -196,13 +196,17 @@ def main():
     trend = get_random_trend()
     print(f"Selected Trend: {trend['title']} | Mode: {trend['mode']}")
     
-    # 2. Strategy Phase
+    # 2. Strategy Phase (Focus on Topical Authority and Long-Tail Keywords)
     system_prompt_strategy = "You are Maya, a 32-year-old former journalist turned lifestyle blogger. You write like you're having coffee with a friend."
     user_prompt_strategy = f"""
     Trend: {trend['title']}
     Snippet: {trend['snippet']}
     TASK: Write a {'TIMELESS evergreen guide' if trend['mode'] == 'evergreen' else 'TIMELY news-angle post'}.
-    Return ONLY valid JSON: {{"target_keyword": "...", "search_terms": ["noun1", "noun2"], "image_query": "visual term", "seo_keywords": "5 keywords", "angle": "..."}}
+    
+    CRITICAL SEO REQUIREMENT: As a brand new blog with zero authority, you CANNOT target broad keywords. 
+    You must extract a highly specific, LONG-TAIL KEYWORD related to this trend. Ensure the topic stays within a tight sub-niche to build TOPICAL AUTHORITY. Focus on answering a specific problem for the reader.
+    
+    Return ONLY valid JSON: {{"target_keyword": "long-tail keyword...", "search_terms": ["noun1", "noun2"], "image_query": "visual term", "seo_keywords": "5 long tail keywords", "angle": "..."}}
     """
     strategy = call_llm(system_prompt_strategy, user_prompt_strategy)
     
@@ -215,8 +219,8 @@ def main():
     facts = get_wikipedia_facts(search_terms)
     image = get_unsplash_image(strategy['image_query'], fallback_query=strategy['target_keyword'])
     
-    # 4. Writing Phase
-    system_prompt_writer = "You are Maya, a former investigative journalist who now writes lifestyle guides. Your voice is conversational, slightly witty, genuinely helpful. Use 'you' and 'I' freely."
+    # 4. Writing Phase (Content Quality - anticipating questions)
+    system_prompt_writer = "You are Maya, a former investigative journalist who now writes lifestyle guides. Your voice is conversational, slightly witty, genuinely helpful. Position yourself as an authority in your niche."
     user_prompt_writer = f"""
     Write a blog post.
     TITLE: {strategy['target_keyword']}
@@ -228,12 +232,16 @@ def main():
     Format as HTML with:
     <img src="{image['url']}" alt="{strategy['target_keyword']}"/>
     <p>Photo by {image['credit']} on Unsplash</p>
+    
+    CONTENT QUALITY REQUIREMENTS:
+    1. Answer the reader's primary question quickly and efficiently in the intro.
+    2. Anticipate the *next* logical question they will have in their mind and answer that too.
+    3. Make the content comprehensive and highly authoritative.
 
     If the article benefits from references, include the same Wikipedia links at the end as sources.
-    Use clear, helpful examples and make the post rich, complete, and practical.
-    Never use em-dashes "—" — they scream AI output. Avoid transitional clichés like 'Moreover,' 'In today's world,' or 'It is important to note.' Vary your sentence length: mix short punchy sentences with longer, descriptive ones.
+    Never use em-dashes "—" — they scream AI output. Avoid transitional clichés like 'Moreover,' 'In today's world,' or 'It is important to note.' Vary your sentence length.
 
-    Use <h2>, <p>, <ul>. 900-1100 words. Return ONLY JSON: {{"title": "...", "content": "...HTML..."}}
+    Use <h2>, <p>, <ul>. 1000-1200 words. Return ONLY JSON: {{"title": "...", "content": "...HTML..."}}
     """
     post = call_llm(system_prompt_writer, user_prompt_writer)
     
