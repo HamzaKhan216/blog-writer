@@ -94,20 +94,23 @@ def call_llm(system_prompt, user_prompt, max_attempts=4, initial_backoff=1):
             print(f"Groq attempt {attempt} failed: {exc}. Retrying in {backoff} seconds...")
             time.sleep(backoff)
 
-def get_wikipedia_facts(search_terms):
+# FIX 2 APPLIED: Added context parameter with smart fallback logic
+def get_wikipedia_facts(search_terms, context=""):
     """Searches Wikipedia for multiple terms. Returns concise, combined facts."""
-    print(f"Searching Wikipedia for: {search_terms}")
+    print(f"Searching Wikipedia for: {search_terms} (Context: '{context}')")
     headers = {"User-Agent": "AIBlogBot/1.0 (https://github.com/yourusername)"}
     
     all_summaries = []
     all_links = []
 
     for term in search_terms[:3]:  # max 3 terms to keep prompt lean
+        enhanced_term = f"{term} {context}".strip() if context else term
+        
         search_params = {
             "action": "query",
             "format": "json",
             "list": "search",
-            "srsearch": term,
+            "srsearch": enhanced_term,
             "srlimit": 2,  # top 2 results per term
             "srprop": "snippet"
         }
@@ -116,6 +119,16 @@ def get_wikipedia_facts(search_terms):
             res.raise_for_status()
             data = res.json()
             results = data.get('query', {}).get('search', [])
+            
+            # SMART FALLBACK: If context query was too restrictive, try raw term
+            if not results and context:
+                print(f"No results for '{enhanced_term}', falling back to raw term '{term}'...")
+                search_params["srsearch"] = term
+                res = requests.get("https://en.wikipedia.org/w/api.php", params=search_params, headers=headers, timeout=REQUEST_TIMEOUT)
+                res.raise_for_status()
+                data = res.json()
+                results = data.get('query', {}).get('search', [])
+
             if not results:
                 continue
 
@@ -196,17 +209,22 @@ def main():
     trend = get_random_trend()
     print(f"Selected Trend: {trend['title']} | Mode: {trend['mode']}")
     
-    # 2. Strategy Phase (Focus on Topical Authority and Long-Tail Keywords)
+    # 2. Strategy Phase
     system_prompt_strategy = "You are Maya, a 32-year-old former journalist turned lifestyle blogger. You write like you're having coffee with a friend."
+    
+    # FIX 1 APPLIED: Added Fact Guardrails, Tight Search Terms, and Graceful Pivots
     user_prompt_strategy = f"""
     Trend: {trend['title']}
     Snippet: {trend['snippet']}
     TASK: Write a {'TIMELESS evergreen guide' if trend['mode'] == 'evergreen' else 'TIMELY news-angle post'}.
     
-    CRITICAL SEO REQUIREMENT: As a brand new blog with zero authority, you CANNOT target broad keywords. 
-    You must extract a highly specific, LONG-TAIL KEYWORD related to this trend. Ensure the topic stays within a tight sub-niche to build TOPICAL AUTHORITY. Focus on answering a specific problem for the reader.
-    
-    Return ONLY valid JSON: {{"target_keyword": "long-tail keyword...", "search_terms": ["noun1", "noun2"], "image_query": "visual term", "seo_keywords": "5 long tail keywords", "angle": "..."}}
+    CRITICAL REQUIREMENTS:
+    1. Zero Authority SEO: Extract a highly specific, LONG-TAIL KEYWORD. Stay within a tight sub-niche of lifestyle, productivity, home, or wellness to build topical authority.
+    2. Fact Guardrail: NEVER invent or hallucinate factual definitions or historical design trends about the search terms. Keep it real.
+    3. Tight Search Terms: Provide exactly 2-3 search_terms. They must be highly relevant to the core topic so Wikipedia returns logical matches (e.g., if the topic is mentoring, do NOT use a generic word like 'network', use 'professional networking').
+    4. Graceful Pivot: If the trend is a hard news story, a sports score, or a political event that absolutely cannot be logically discussed on a lifestyle/productivity blog, pivot the topic to a broader, evergreen human-interest or productivity angle inspired by the trend, rather than forcing a literal connection.
+
+    Return ONLY valid JSON: {{"target_keyword": "...", "search_terms": ["noun1", "noun2"], "image_query": "visual term", "seo_keywords": "5 long tail keywords", "angle": "..."}}
     """
     strategy = call_llm(system_prompt_strategy, user_prompt_strategy)
     
@@ -216,11 +234,14 @@ def main():
         search_terms = [search_terms]
     
     # 3. Research Phase
-    facts = get_wikipedia_facts(search_terms)
+    # FIX 2 APPLIED: Passing target keyword as context
+    facts = get_wikipedia_facts(search_terms, context=strategy['target_keyword'])
     image = get_unsplash_image(strategy['image_query'], fallback_query=strategy['target_keyword'])
     
-    # 4. Writing Phase (Content Quality - anticipating questions)
+    # 4. Writing Phase
     system_prompt_writer = "You are Maya, a former investigative journalist who now writes lifestyle guides. Your voice is conversational, slightly witty, genuinely helpful. Position yourself as an authority in your niche. "
+    
+    # FIX 3 APPLIED: Strict Source Link Quality Gate
     user_prompt_writer = f"""
     Write a blog post.
     TITLE: {strategy['target_keyword']}
@@ -242,7 +263,7 @@ def main():
     5. Organic Fact Integration: When weaving in the provided facts, translate them into your conversational, journalistic voice. Do not dump them as dry, academic definitions, corporate background stats, or out-of-context Wikipedia trivia. 
     6. Tone Continuity: Keep your engaging, conversational, and authoritative voice consistent from the first paragraph to the last. Do not slide into a robotic or textbook-like tone in the middle of the article.
 
-    If the article benefits from references, include the same Wikipedia links at the end as sources.
+    Only include the provided Wikipedia links at the very end as sources if they are 100% relevant and directly referenced in your text. If a link is irrelevant to the context, omit it completely. Quality over quantity.
     Never use em-dashes "—" — they scream AI output. Avoid transitional clichés like 'Moreover,' 'In today's world,' or 'It is important to note.' Vary your sentence length.
 
     Use <h2>, <p>, <ul>. 1000-1200 words. Return ONLY JSON: {{"title": "...", "content": "...HTML..."}}
