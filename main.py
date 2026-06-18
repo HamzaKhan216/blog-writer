@@ -257,7 +257,7 @@ def main():
     CONTENT QUALITY REQUIREMENTS:
     1. Answer the reader's primary question quickly and efficiently in the intro.
     2. Anticipate the *next* logical question they will have in their mind and answer that too.
-    3. Make the content comprehensive and highly authoritative.
+    3. Make the content comprehensive and highly authoritative. *Try* to add bullet points or numbered lists, which can make it easier to skim for quick, actionable tips
     Adhere to these editorial rules to maintain a human-written quality:
     4. Seamless Keyword Integration: You must weave target keywords into the text with perfect, natural grammar. If an SEO keyword is a raw, ungrammatical search phrase, adjust the surrounding sentence so it reads naturally (e.g., do not write "...rules of dynamic pricing explained." as a noun phrase).
     5. Organic Fact Integration: When weaving in the provided facts, translate them into your conversational, journalistic voice. Do not dump them as dry, academic definitions, corporate background stats, or out-of-context Wikipedia trivia. 
