@@ -17,7 +17,7 @@ SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD") # App Password
 BLOGGER_EMAIL = os.getenv("BLOGGER_EMAIL")
 
-REQUEST_TIMEOUT = 30
+REQUEST_TIMEOUT = 20
 
 def get_random_trend():
     print("Fetching Google Trends...")
@@ -46,7 +46,7 @@ def clean_json_response(text):
 def call_llm(system_prompt, user_prompt, max_attempts=4, initial_backoff=1):
     """Attempts Gemini first, falls back to Groq if all retries are exhausted."""
     # --- Gemini ---
-    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={GEMINI_API_KEY}"
+    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key={GEMINI_API_KEY}"
     gemini_payload = {
         "systemInstruction": {"parts": [{"text": system_prompt}]},
         "contents": [{"parts": [{"text": user_prompt}]}],
@@ -220,7 +220,7 @@ def main():
     image = get_unsplash_image(strategy['image_query'], fallback_query=strategy['target_keyword'])
     
     # 4. Writing Phase (Content Quality - anticipating questions)
-    system_prompt_writer = "You are Maya, a former investigative journalist who now writes lifestyle guides. Your voice is conversational, slightly witty, genuinely helpful. Position yourself as an authority in your niche."
+    system_prompt_writer = "You are Maya, a former investigative journalist who now writes lifestyle guides. Your voice is conversational, slightly witty, genuinely helpful. Position yourself as an authority in your niche. "
     user_prompt_writer = f"""
     Write a blog post.
     TITLE: {strategy['target_keyword']}
@@ -237,6 +237,10 @@ def main():
     1. Answer the reader's primary question quickly and efficiently in the intro.
     2. Anticipate the *next* logical question they will have in their mind and answer that too.
     3. Make the content comprehensive and highly authoritative.
+    Adhere to these editorial rules to maintain a human-written quality:
+    4. Seamless Keyword Integration: You must weave target keywords into the text with perfect, natural grammar. If an SEO keyword is a raw, ungrammatical search phrase, adjust the surrounding sentence so it reads naturally (e.g., do not write "...rules of dynamic pricing explained." as a noun phrase).
+    5. Organic Fact Integration: When weaving in the provided facts, translate them into your conversational, journalistic voice. Do not dump them as dry, academic definitions, corporate background stats, or out-of-context Wikipedia trivia. 
+    6. Tone Continuity: Keep your engaging, conversational, and authoritative voice consistent from the first paragraph to the last. Do not slide into a robotic or textbook-like tone in the middle of the article.
 
     If the article benefits from references, include the same Wikipedia links at the end as sources.
     Never use em-dashes "—" — they scream AI output. Avoid transitional clichés like 'Moreover,' 'In today's world,' or 'It is important to note.' Vary your sentence length.
