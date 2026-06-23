@@ -2,7 +2,7 @@ name: AI Blogger Automation
 
 on:
   schedule:
-    - cron: '0 12 * * *' # Runs daily at 12:00 PM UTC
+    - cron: '0 12 */2 * *' # Runs daily at 12:00 PM UTC
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
 jobs:
