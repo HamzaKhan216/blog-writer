@@ -1,6 +1,6 @@
 # AI Blog Bot
 
-An autonomous blog post generator that scrapes Google Trends, researches topics via Wikipedia, generates content using Gemini AI (with Groq fallback), grabs images from Unsplash, and publishes to Blogger via email.
+An autonomous blog post generator that scrapes Google Trends, researches topics via Wikipedia, generates content using Gemini AI (with Groq fallback), grabs images from Unsplash, and publishes to Blogger via email seamlessly.
 
 ## How It Works
 
