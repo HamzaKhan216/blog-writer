@@ -46,3 +46,4 @@ python main.py
 All config lives at the top of `main.py`:
     47|- `REQUEST_TIMEOUT` — HTTP request timeout in seconds (default: 15)
     48|- Retry logic applies exponential backoff (up to 4 attempts) for both Gemini and Groq calls
+Activity update: Tue Nov 10 09:11:17 UTC 2026
